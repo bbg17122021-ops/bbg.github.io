@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng Điều Khiển TTS - Mô Phỏng Larvoice</title>
+    <!-- Tải Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Cấu hình Tailwind cho font Inter -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc; /* Màu nền nhẹ nhàng */
+        }
+        /* Custom styles for better aesthetics */
+        .shadow-custom {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+        }
+        .generate-btn {
+            background-image: linear-gradient(to right, #4c51bf, #667eea);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        .generate-btn:hover {
+            box-shadow: 0 4px 10px rgba(76, 81, 191, 0.4);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Thanh Điều Hướng (Sidebar/Header) -->
+    <header class="bg-white shadow-md p-4 lg:p-6 sticky top-0 z-10 flex items-center justify-between">
+        <h1 class="text-xl lg:text-2xl font-bold text-gray-800">
+            <span class="text-indigo-600">TTS</span> Studio
+        </h1>
+        
+        <!-- Thông tin số dư và Avatar (Mobile & Desktop) -->
+        <div class="flex items-center space-x-4">
+            <div id="usage-display" class="hidden sm:block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium shadow-sm">
+                <span class="font-semibold">Ký tự:</span> 45,000 / 50,000
+            </div>
+            <div class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold cursor-pointer">
+                AB
+            </div>
+        </div>
+    </header>
+
+    <!-- Nội dung chính của Bảng Điều Khiển -->
+    <main class="container mx-auto p-4 lg:p-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- CỘT CHÍNH: KHU VỰC TẠO AUDIO -->
+            <section class="lg:col-span-2 space-y-8">
+                <h2 class="text-3xl font-extrabold text-gray-800">Tạo Audio Mới</h2>
+
+                <!-- 1. KHU VỰC NHẬP VĂN BẢN -->
+                <div class="bg-white p-6 rounded-xl shadow-custom transition duration-300 hover:shadow-lg">
+                    <label for="text-input" class="block text-lg font-semibold text-gray-700 mb-3">
+                        Nhập Văn Bản (Hỗ trợ SSML)
+                    </label>
+                    <textarea 
+                        id="text-input" 
+                        rows="8" 
+                        maxlength="500"
+                        class="w-full p-4 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 resize-none text-gray-800 placeholder-gray-400" 
+                        placeholder="Nhập văn bản bạn muốn chuyển thành giọng nói tại đây..."
+                    ></textarea>
+                    <div class="flex justify-between items-center mt-2">
+                        <div class="flex items-center text-sm text-gray-500">
+                            <svg class="w-4 h-4 mr-1 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Tối đa 500 ký tự cho mỗi lần tạo.
+                        </div>
+                        <span id="char-count" class="text-sm font-medium text-gray-600">0 / 500</span>
+                    </div>
+                </div>
+
+                <!-- 2. KHU VỰC LỰA CHỌN GIỌNG NÓI & CÀI ĐẶT -->
+                <div class="bg-white p-6 rounded-xl shadow-custom transition duration-300 hover:shadow-lg">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Chọn Giọng Nói & Cài Đặt</h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <!-- Ngôn ngữ -->
+                        <div>
+                            <label for="lang-select" class="block text-sm font-medium text-gray-700">Ngôn ngữ</label>
+                            <select id="lang-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option>Tiếng Việt (vi-VN)</option>
+                                <option>English (en-US)</option>
+                            </select>
+                        </div>
+                        <!-- Giọng đọc -->
+                        <div>
+                            <label for="speaker-select" class="block text-sm font-medium text-gray-700">Giọng đọc</label>
+                            <select id="speaker-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option>Nữ - Mai (Miền Nam)</option>
+                                <option>Nam - Đức (Miền Bắc)</option>
+                                <option>Nữ - Hà (Tin tức)</option>
+                            </select>
+                        </div>
+                        <!-- Phong cách -->
+                        <div>
+                            <label for="style-select" class="block text-sm font-medium text-gray-700">Phong cách</label>
+                            <select id="style-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option>Thông thường</option>
+                                <option>Vui vẻ</option>
+                                <option>Buồn bã</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Thanh trượt điều chỉnh -->
+                    <div class="space-y-4">
+                        <!-- Tốc độ -->
+                        <div>
+                            <label for="speed-range" class="block text-sm font-medium text-gray-700 flex justify-between">
+                                <span>Tốc độ: <span id="speed-value" class="font-bold text-indigo-600">1.0x</span></span>
+                            </label>
+                            <input type="range" id="speed-range" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer range-lg">
+                        </div>
+                        <!-- Cao độ -->
+                        <div>
+                            <label for="pitch-range" class="block text-sm font-medium text-gray-700 flex justify-between">
+                                <span>Cao độ: <span id="pitch-value" class="font-bold text-indigo-600">0.0 semitones</span></span>
+                            </label>
+                            <input type="range" id="pitch-range" min="-5" max="5" step="0.5" value="0.0" class="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer range-lg">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. NÚT TẠO VÀ TRẠNG THÁI -->
+                <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                    <button id="generate-btn" class="generate-btn w-full sm:w-auto px-10 py-3 text-lg font-bold text-white rounded-xl shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 flex items-center justify-center">
+                        <svg id="generate-icon" class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18A9 9 0 0112 3z"></path></svg>
+                        <span id="generate-text">TẠO AUDIO</span>
+                    </button>
+                    <div id="status-message" class="text-sm font-medium text-gray-600 hidden">
+                        <span class="text-green-500 flex items-center">
+                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Đang xử lý...
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CỘT PHỤ: DANH SÁCH FILE ĐÃ TẠO -->
+            <section class="lg:col-span-1 space-y-6">
+                <h2 class="text-3xl font-extrabold text-gray-800">File Đã Tạo Của Tôi</h2>
+
+                <div class="bg-white p-4 rounded-xl shadow-custom">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-semibold text-gray-700">Lịch Sử</h3>
+                        <button class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Xem tất cả</button>
+                    </div>
+
+                    <!-- Danh sách file (Sử dụng mockup data) -->
+                    <div id="file-history" class="space-y-4">
+                        <!-- MOCKUP FILE 1 -->
+                        <div class="file-item border-b border-gray-100 pb-3 last:border-b-0 flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-800 truncate" title="Giới thiệu về công nghệ AI và tương lai.">Giới thiệu về công nghệ AI...</p>
+                                <p class="text-xs text-gray-500">20/05/2024 - Mai</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-gray-500 hover:text-indigo-600 p-1 rounded-full hover:bg-indigo-50 transition" title="Nghe" onclick="showModal('Nghe Audio', 'Đang phát file: Giới thiệu về công nghệ AI.... (Chức năng mô phỏng)')">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </button>
+                                <button class="text-gray-500 hover:text-green-600 p-1 rounded-full hover:bg-green-50 transition" title="Tải xuống" onclick="showModal('Tải xuống', 'File Giới thiệu về công nghệ AI.... đang được tải xuống. (Chức năng mô phỏng)')">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- MOCKUP FILE 2 -->
+                        <div class="file-item border-b border-gray-100 pb-3 last:border-b-0 flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-800 truncate" title="Kịch bản quảng cáo sản phẩm mới.">Kịch bản quảng cáo sản phẩm...</p>
+                                <p class="text-xs text-gray-500">19/05/2024 - Đức</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-gray-500 hover:text-indigo-600 p-1 rounded-full hover:bg-indigo-50 transition" title="Nghe" onclick="showModal('Nghe Audio', 'Đang phát file: Kịch bản quảng cáo sản phẩm mới. (Chức năng mô phỏng)')">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </button>
+                                <button class="text-gray-500 hover:text-green-600 p-1 rounded-full hover:bg-green-50 transition" title="Tải xuống" onclick="showModal('Tải xuống', 'File Kịch bản quảng cáo sản phẩm mới. đang được tải xuống. (Chức năng mô phỏng)')">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <p id="no-files-message" class="text-center text-sm text-gray-500 py-4 hidden">Chưa có file nào được tạo.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal thông báo (thay thế alert) -->
+    <div id="status-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm transform transition-all">
+            <h3 id="modal-title" class="text-lg font-bold text-gray-800 mb-3">Thông báo</h3>
+            <p id="modal-message" class="text-gray-600 mb-4"></p>
+            <button onclick="document.getElementById('status-modal').classList.add('hidden')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition duration-150">
+                Đóng
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Hàm hiển thị Modal (thay thế alert) ---
+        // Đặt hàm này ở phạm vi toàn cục để các hàm onclick trong HTML có thể truy cập.
+        const showModal = (title, message) => {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('status-modal').classList.remove('hidden');
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput = document.getElementById('text-input');
+            const charCount = document.getElementById('char-count');
+            const generateBtn = document.getElementById('generate-btn');
+            const generateText = document.getElementById('generate-text');
+            const generateIcon = document.getElementById('generate-icon');
+            const statusMessage = document.getElementById('status-message');
+            const fileHistory = document.getElementById('file-history');
+            const noFilesMessage = document.getElementById('no-files-message');
+            
+            const speedRange = document.getElementById('speed-range');
+            const speedValue = document.getElementById('speed-value');
+            const pitchRange = document.getElementById('pitch-range');
+            const pitchValue = document.getElementById('pitch-value');
+
+
+            // --- 1. Cập nhật số lượng ký tự ---
+            const updateCharCount = () => {
+                const count = textInput.value.length;
+                charCount.textContent = `${count} / 500`;
+                
+                // Cập nhật màu sắc dựa trên giới hạn
+                if (count > 450) {
+                    charCount.classList.remove('text-gray-600');
+                    charCount.classList.add('text-red-500');
+                } else {
+                    charCount.classList.remove('text-red-500');
+                    charCount.classList.add('text-gray-600');
+                }
+
+                // Vô hiệu hóa nút nếu không có văn bản
+                generateBtn.disabled = count === 0;
+                generateBtn.classList.toggle('opacity-50', count === 0);
+                generateBtn.classList.toggle('hover:shadow-xl', count !== 0);
+            };
+
+            textInput.addEventListener('input', updateCharCount);
+            updateCharCount(); // Khởi tạo
+
+            // --- 2. Cập nhật giá trị thanh trượt ---
+            speedRange.addEventListener('input', () => {
+                speedValue.textContent = `${speedRange.value}x`;
+            });
+
+            pitchRange.addEventListener('input', () => {
+                pitchValue.textContent = `${pitchRange.value} semitones`;
+            });
+            
+            // --- 3. Xử lý sự kiện TẠO AUDIO ---
+            generateBtn.addEventListener('click', () => {
+                const text = textInput.value.trim();
+                const selectedSpeaker = document.getElementById('speaker-select').value;
+                const speed = speedRange.value;
+
+                if (text.length === 0) {
+                    showModal("Lỗi", "Vui lòng nhập văn bản trước khi tạo audio.");
+                    return;
+                }
+
+                // Simulate loading state
+                generateBtn.disabled = true;
+                generateText.textContent = 'ĐANG TẠO...';
+                generateIcon.innerHTML = `<svg class="animate-spin w-6 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                          </svg>`;
+                statusMessage.classList.remove('hidden');
+                statusMessage.innerHTML = `<span class="text-orange-500 flex items-center">
+                                                <svg class="w-5 h-5 mr-1 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                Đang xử lý ${text.length} ký tự...
+                                            </span>`;
+
+                // Simulate API call delay
+                setTimeout(() => {
+                    // Simulate successful creation
+                    const fileName = text.substring(0, 30) + (text.length > 30 ? '...' : '');
+                    const now = new Date();
+                    const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+                    
+                    addFileToHistory(fileName, selectedSpeaker.split(' - ')[0], dateStr);
+
+                    // Reset state
+                    generateBtn.disabled = false;
+                    generateText.textContent = 'TẠO AUDIO';
+                    generateIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18A9 9 0 0112 3z"></path>`;
+                    statusMessage.classList.remove('hidden');
+                    statusMessage.innerHTML = `<span class="text-green-600 flex items-center">
+                                                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                Tạo thành công! File đã được thêm vào Lịch sử.
+                                            </span>`;
+
+                    // Clear message after a short delay
+                    setTimeout(() => {
+                        statusMessage.classList.add('hidden');
+                    }, 5000);
+
+                }, 3000); // 3 second delay simulation
+            });
+
+            // --- 4. Thêm file mới vào lịch sử ---
+            const addFileToHistory = (name, speaker, date) => {
+                const newItem = document.createElement('div');
+                newItem.classList.add('file-item', 'border-b', 'border-gray-100', 'pb-3', 'last:border-b-0', 'flex', 'items-center', 'justify-between', 'opacity-0', 'transform', 'translate-y-2');
+                newItem.innerHTML = `
+                    <div>
+                        <p class="font-medium text-gray-800 truncate" title="${name}">${name}</p>
+                        <p class="text-xs text-gray-500">${date} - ${speaker}</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="text-gray-500 hover:text-indigo-600 p-1 rounded-full hover:bg-indigo-50 transition" title="Nghe" onclick="showModal('Nghe Audio', 'Đang phát file: ${name}. (Chức năng mô phỏng)')">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </button>
+                        <button class="text-gray-500 hover:text-green-600 p-1 rounded-full hover:bg-green-50 transition" title="Tải xuống" onclick="showModal('Tải xuống', 'File ${name} đang được tải xuống. (Chức năng mô phỏng)')">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        </button>
+                    </div>
+                `;
+                
+                // Thêm vào đầu danh sách (mới nhất)
+                fileHistory.prepend(newItem);
+                
+                // Hiệu ứng Fade-in
+                setTimeout(() => {
+                    newItem.classList.remove('opacity-0', 'translate-y-2');
+                    newItem.classList.add('opacity-100', 'translate-y-0');
+                }, 10);
+
+                // Ẩn thông báo "Chưa có file"
+                noFilesMessage.classList.add('hidden');
+            };
+
+            // Khởi tạo trạng thái danh sách file
+            if (fileHistory.children.length === 0) {
+                noFilesMessage.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
