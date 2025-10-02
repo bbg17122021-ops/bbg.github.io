@@ -1,1 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giọng nói AI dễ thương</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #fce4ec, #f8bbd0);
+      color: #333;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    button {
+      background-color: #ff80ab;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #ff4081;
+    }
+    .note {
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎀 Xin chào! Đây là giọng nói AI dễ thương 🎀</h1>
+  <button onclick="speak()">Phát giọng nói</button>
+  <p class="note">Bạn có thể chỉnh sửa đoạn thoại hoặc tích hợp API TTS sau.</p>
+
+  <script>
+    function speak() {
+      const msg = new SpeechSynthesisUtterance();
+      msg.text = "Chào bạn nhé! Mình là giọng nói AI dễ thương, luôn sẵn sàng giúp bạn bất cứ lúc nào.";
+      msg.lang = "vi-VN";
+      msg.pitch = 1.5; // giọng cao hơn
+      msg.rate = 0.95; // nói chậm nhẹ
+      msg.voice = speechSynthesis.getVoices().find(v => v.lang === "vi-VN" && v.name.includes("Female"));
+      window.speechSynthesis.speak(msg);
+    }
+  </script>
+</body>
+</html>
 
